@@ -1,0 +1,96 @@
+({
+    //Load Account Team Member List and Selected Account Data 
+    doInit:function(component, event, helper){
+        helper.getAccountMemberList(component, event);
+        helper.getAccountData(component, event);
+        var currentUserId = $A.get("$SObjectType.CurrentUser.Id");
+        component.set("v.currentUserId", currentUserId);
+    },
+    
+    //Open & Close Account Team Member Create Panel
+    handleCreatePanel  : function(component, event, helper) {
+        var isOpenCreatePanel =  component.get("v.isOpenCreatePanel");
+        if(isOpenCreatePanel){
+            component.set("v.isOpenCreatePanel", false);
+        }
+        else{
+            component.set("v.isOpenCreatePanel", true);
+        }
+    },
+    
+    //Handle User On Change
+    handleUserOnchange: function(component, event, helper) {
+        var selectedUserId = event.getSource().get("v.value");
+        component.set("v.selectedUserId", selectedUserId);
+    },
+    
+    //Handle Account Access On Change
+    handleAccountAccessOnchange: function(component, event, helper) {
+        var selectedValue = event.getSource().get("v.value");
+        component.set("v.accountAccessSelected", selectedValue);
+    },
+    
+    //Handle Contact Access On Change
+    handlContactAccessOnchange: function(component, event, helper) {
+        var selectedValue = event.getSource().get("v.value");
+        component.set("v.contactAccessSelected", selectedValue);
+    },
+    
+    //Handle Opportunity Access On Change
+    handleOpportunityAccessOnchange: function(component, event, helper) {
+        var selectedValue = event.getSource().get("v.value");
+        component.set("v.opportunityAccessSelected", selectedValue);
+    },
+    
+    //Handle Case Access On Change
+    handleCaseAccessOnchange: function(component, event, helper) {
+        var selectedValue = event.getSource().get("v.value");
+        component.set("v.caseAccessSelected", selectedValue);
+    },
+    
+    //Handle Team Role On Change
+    handleTeamRoleOnchange: function(component, event, helper) {
+        var selectedValue = event.getSource().get("v.value");
+        component.set("v.teamRoleSelected", selectedValue);
+    },
+    
+    //Handle Cancel
+    handleCancel: function(component, event, helper) {
+        component.set("v.accountTeamMemberId", '');
+        component.set("v.teamRoleSelected",'');
+        component.set("v.selectedUserId", '');
+        component.set("v.isOpenCreatePanel", false);
+        component.set("v.isOpenCreatePanel", true);
+        component.set("v.message", '');
+    },
+    
+    //Handle On Submit of Record Edit Form
+    handleSubmit  : function(component, event, helper) {
+        event.preventDefault();
+        helper.validateAllRequiredFields(component, event);
+    },
+    
+    //Handle delete of Account Team Member
+    handleDelete  : function(component, event, helper) {
+        helper.deleteAccountMember(component, event);
+        helper.getAccountMemberList(component, event);
+    },
+    
+    //Handle edit Account Team Member
+    handleEdit  : function(component, event, helper) {
+        var accountTeamMemberId = event.getSource().get("v.value");
+        component.set("v.accountTeamMemberId", accountTeamMemberId);
+        var accountTeamMemberList = component.get("v.accountTeamMemberList");
+        for(var i = 0; i < accountTeamMemberList.length; i++) {
+            var accTMember = accountTeamMemberList[i];
+            if(accountTeamMemberId == accTMember.Id){
+                component.set("v.accountAccessSelected", accTMember.AccountAccessLevel);
+                component.set("v.selectedUserId", accTMember.UserId);
+                component.set("v.opportunityAccessSelected", accTMember.OpportunityAccessLevel);
+                component.set("v.caseAccessSelected", accTMember.CaseAccessLevel);
+                component.set("v.teamRoleSelected", accTMember.TeamMemberRole);
+                break;
+            }
+        }
+    }
+})

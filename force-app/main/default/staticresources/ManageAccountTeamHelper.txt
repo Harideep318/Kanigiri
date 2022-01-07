@@ -1,0 +1,174 @@
+({
+    //Get Selected Account Data
+    getAccountData : function(component, event){
+        var action = component.get("c.getAccount");
+        action.setParams({
+            "recordId": component.get("v.recordId")
+        });
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                var resultData = response.getReturnValue();
+                component.set("v.acc", resultData);
+                if(resultData){
+                    if(resultData.S_S_Owner__c != null){
+                        component.set("v.ssOwnerUserId", resultData.S_S_Owner__c);
+                    }
+                }
+            }
+        });
+        $A.enqueueAction(action);
+    },
+    
+    //Get Account Team Member List
+    getAccountMemberList : function(component, event){
+        var action = component.get("c.getAccountTeamMemberList");
+        action.setParams({
+            "recordId": component.get("v.recordId")
+        });
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                var resultData = response.getReturnValue();
+                component.set("v.accountTeamMemberList", resultData);
+            }
+        });
+        $A.enqueueAction(action);
+    },
+    
+    //Save Account Team Member
+    saveAccountMember : function(component, event){
+        var eventFields = event.getParam("fields");
+        var accTMember = component.get("v.accTMember");
+        var accountTeamMemberId = component.get("v.accountTeamMemberId");
+        if(accountTeamMemberId != null && accountTeamMemberId != '' && accountTeamMemberId != 'undefined'){
+            accTMember.Id = accountTeamMemberId;    
+        }else{
+            accTMember.Id = null;
+        }
+        accTMember.UserId = component.get("v.selectedUserId");
+        accTMember.AccountId = component.get("v.recordId");
+        accTMember.AccountAccessLevel = component.get("v.accountAccessSelected");
+        //accTMember.ContactAccessLevel = component.get("v.contactAccessSelected");
+        accTMember.CaseAccessLevel = component.get("v.caseAccessSelected");
+        accTMember.OpportunityAccessLevel = component.get("v.opportunityAccessSelected");
+        accTMember.TeamMemberRole = eventFields.TeamMemberRole;
+        var accTMemberJson = JSON.stringify(accTMember);
+        var action = component.get("c.saveAccountTeamMember");
+        action.setParams({
+            "accTMemberJson": accTMemberJson
+        });
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                component.set("v.message", $A.get("$Label.c.S_S_Account_Team_Success"));
+                component.set("v.isSuccess", true);
+                component.set("v.isFailed", false);
+                this.getAccountMemberList(component, event);
+                component.set("v.teamRoleSelected",'');
+                component.set("v.selectedUserId", '');
+                component.set("v.accountTeamMemberId", '');
+                component.set("v.isOpenCreatePanel", false);
+                component.set("v.isOpenCreatePanel", true);
+            }else if (state === "ERROR") {
+                var errors = response.getError();
+                if (errors && Array.isArray(errors) && errors.length > 0) {
+                    var message = errors[0].message;
+                    if(message.includes('INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY')){
+                        component.set("v.message", $A.get("$Label.c.S_S_Account_Team_Insufficient_Access"));
+                    }else{
+                        component.set("v.message", $A.get("$Label.c.S_S_Account_Team_Fail"));
+                    }
+                    component.set("v.isFailed", true);
+                    component.set("v.isSuccess", false);
+                    component.set("v.isOpenCreatePanel", false);
+                    component.set("v.isOpenCreatePanel", true);
+                }                
+            }else {
+                component.set("v.message", $A.get("$Label.c.S_S_Account_Team_Fail"));
+                component.set("v.isFailed", true);
+                component.set("v.isSuccess", false);
+                component.set("v.isOpenCreatePanel", false);
+                component.set("v.isOpenCreatePanel", true);
+            }
+        });
+        $A.enqueueAction(action);
+    },
+    
+    //Check Existing Account Member
+    checkExistingAccountMember : function(component, event){
+        var accountTeamMemberId = component.get("v.accountTeamMemberId");
+        if(accountTeamMemberId != null && accountTeamMemberId != '' && accountTeamMemberId != 'undefined'){
+            this.saveAccountMember(component, event);
+        }
+        else{
+            var selectedUserId = component.get("v.selectedUserId");
+            var accountId = component.get("v.recordId");
+            var accountTeamMemberList = component.get("v.accountTeamMemberList");
+            var isExist = false;
+            for(var i = 0; i < accountTeamMemberList.length; i++) {
+                var accTMember = accountTeamMemberList[i];
+                if(accountId == accTMember.AccountId && selectedUserId == accTMember.UserId){
+                    component.set("v.message", $A.get("$Label.c.S_S_Account_Team_Exist"));
+                    component.set("v.isSuccess", false);
+                    component.set("v.isFailed", true);
+                    component.set("v.isOpenCreatePanel", false);
+                    component.set("v.isOpenCreatePanel", true);
+                    isExist = true;
+                    break;
+                }
+            }
+            if(!isExist){
+                this.saveAccountMember(component, event);
+            }
+        }
+    },
+    
+    //Delete Account Team Member
+    deleteAccountMember : function(component, event){
+        var accountTeamMemberId = event.getSource().get("v.value");
+        var action = component.get("c.deleteAccountTeamMember");
+        action.setParams({
+            "recordId": accountTeamMemberId
+        });
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                component.set("v.message",  $A.get("$Label.c.S_S_Account_Team_Deleted"));
+                component.set("v.isSuccess", true);
+                component.set("v.isFailed", false);
+                component.set("v.selectedUserId", '');
+                component.set("v.accountTeamMemberId", '');
+            }
+            else {
+                component.set("v.message", $A.get("$Label.c.S_S_Account_Team_Fail"));
+                component.set("v.isFailed", true);
+                component.set("v.isSuccess", false);
+                component.set("v.isOpenCreatePanel", false);
+                component.set("v.isOpenCreatePanel", true);
+            }
+        });
+        $A.enqueueAction(action);
+    },
+    
+    //Validate Account Team Member Required Fields
+    validateAllRequiredFields : function(component, event){
+        var eventFields = event.getParam("fields");
+        var selectedUserId = component.get("v.selectedUserId");
+        var isValid = false;
+        if(selectedUserId != null && selectedUserId != '' && selectedUserId != 'undefined' && eventFields.TeamMemberRole != null && eventFields.TeamMemberRole != '' && eventFields.TeamMemberRole != 'undefined'){
+            isValid = true;
+        }
+        if(!isValid){
+            var message = $A.get("$Label.c.S_S_Fill_All_Required_Fields")
+            component.set("v.message", message);
+            component.set("v.isFailed", true);
+            component.set("v.isSuccess", false);
+            component.set("v.selectedUserId", '');
+            component.set("v.isOpenCreatePanel", false);
+            component.set("v.isOpenCreatePanel", true);
+        }else{
+            this.checkExistingAccountMember(component, event);
+        }
+    }
+})

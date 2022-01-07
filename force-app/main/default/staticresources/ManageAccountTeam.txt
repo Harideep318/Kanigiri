@@ -1,0 +1,214 @@
+<!--
+Name: ManageAccountTeam.cmp
+Developer: Biswajeet(Capgemini)
+Description: Manage Account Team Member
+Created Date: 17 Jun 2018
+--> 
+<aura:component controller="ManageAccountTeamController" implements="force:lightningQuickActionWithoutHeader,force:hasRecordId" >
+    
+    <!--Declare Attributes-->
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="selectedUserId" type="String"/>
+    <aura:attribute name="accountTeamMemberId" type="Id" />
+    <aura:attribute name="accountAccessSelected" type="String" default="Read"/>
+    <aura:attribute name="contactAccessSelected" type="String" default="None"/>
+    <aura:attribute name="caseAccessSelected" type="String" default="None"/>
+    <aura:attribute name="opportunityAccessSelected" type="String" default="None"/>
+    <aura:attribute name="teamRoleSelected" type="String" default=""/>
+    <aura:attribute name="message" type="String"/>
+    <aura:attribute name="isSuccess" type="Boolean" default="false"/>
+    <aura:attribute name="isOpenCreatePanel" type="Boolean" default="true"/>
+    <aura:attribute name="isFailed" type="Boolean" default="false"/>
+    <aura:attribute name="accountTeamMemberList" type="AccountTeamMember[]" />
+    <aura:attribute name="acc" type="Account" />
+    <aura:attribute name="currentUserId" type="Id" />
+    <aura:attribute name="ssOwnerUserId" type="Id" />
+    <aura:attribute name="accTMember" type="AccountTeamMember" default="{ sobjectType: 'AccountTeamMember' }" />
+    
+    <!--Declare Handlers-->
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    <!--Component Start-->
+    <div class="slds-page-header">
+        <div class="slds-media">
+            <div class="slds-media__figure">
+                <span class="slds-icon_container" title="Account Team Member">
+                    <lightning:icon iconName="standard:team_member" size="small"/>
+                </span>
+            </div>
+            <div class="slds-media__body">
+                <h1 class="slds-page-header__title slds-truncate slds-align-middle" title="{!v.acc.Name}">{!v.acc.Name}</h1>
+                <p class="slds-text-body_small slds-line-height_reset">Account Team Member</p>
+            </div>
+            
+            <aura:if isTrue="{!v.currentUserId == v.ssOwnerUserId}">
+                <aura:if isTrue="{!v.isOpenCreatePanel}">
+                    <div class="slds-media__figure">
+                        <span class="slds-icon_container" title="Add Team Member">
+                            <a href="javascript:void(0)" onclick="{!c.handleCreatePanel}">
+                                <lightning:icon iconName="utility:dash" size="small"/>
+                            </a>
+                        </span>
+                    </div>                
+                    <aura:set attribute="else">
+                        <div class="slds-media__figure">
+                            <span class="slds-icon_container" title="Close Team Member">
+                                <a href="javascript:void(0)" onclick="{!c.handleCreatePanel}">
+                                    <lightning:icon iconName="utility:add" size="small"/>
+                                </a>
+                            </span>
+                        </div>
+                    </aura:set>
+                </aura:if>
+            </aura:if>
+        </div>
+    </div>
+    <br/>
+    <aura:if isTrue="{!v.currentUserId == v.ssOwnerUserId}">
+        <aura:if isTrue="{!v.isSuccess}">
+            <div class="slds-text-color_success slds-text-align_center">
+                <h1>{!v.message}</h1>
+            </div>
+        </aura:if>
+        
+        <aura:if isTrue="{!v.isFailed}">
+            <div class="slds-text-color_error slds-text-align_center">
+                <h1>{!v.message}</h1>
+            </div>
+        </aura:if>
+        
+        <aura:if isTrue="{!v.isOpenCreatePanel}">
+            <div class="slds-m-around_x-small">
+                <lightning:recordEditForm aura:id="createAccountTeam" recordId="{!v.accountTeamMemberId}" objectApiName="AccountTeamMember" onsubmit="{!c.handleSubmit}">
+                    <label for="teamMember">Team Member</label>
+                    <lightning:inputField aura:id="teamMember" class="nolabel" fieldName="UserId" variant="label-hidden" onchange="{!c.handleUserOnchange}" />              
+                    <lightning:select label="Account Access" value="{!v.accountAccessSelected}" onchange="{!c.handleAccountAccessOnchange}">
+                        <option value="Edit">Read/Write</option>
+                        <option value="Read">Read Only</option>
+                    </lightning:select>
+                    <!--lightning:select label="Contact Access" value="{!v.contactAccessSelected}" onchange="{!c.handleContactAccessOnchange}">
+                        <option value="Edit">Read/Write</option>
+                        <option value="Read">Read Only</option>
+                        <option value="None">Private</option>
+                    </lightning:select-->
+                    <lightning:select label="Opportunity Access" value="{!v.opportunityAccessSelected}" onchange="{!c.handleOpportunityAccessOnchange}">
+                        <option value="Edit">Read/Write</option>
+                        <option value="Read">Read Only</option>
+                        <option value="None">Private</option>
+                    </lightning:select>
+                    <lightning:select label="Case Access" value="{!v.caseAccessSelected}" onchange="{!c.handleCaseAccessOnchange}">
+                        <option value="Edit">Read/Write</option>
+                        <option value="Read">Read Only</option>
+                        <option value="None">Private</option>
+                    </lightning:select>
+                    <lightning:inputField value="{!v.teamRoleSelected}" required="true" onchange="{!c.handleTeamRoleOnchange}" fieldName="TeamMemberRole"/>
+                    <br/>
+                    <div class="slds-align_absolute-center">
+                        <lightning:button variant="brand" type="submit" name="save" label="Save"/>
+                        <lightning:button name="cancel" onclick="{!c.handleCancel}" label="Cancel"/>
+                    </div>
+                </lightning:recordEditForm>
+            </div>
+            <br/>
+        </aura:if>
+    </aura:if>
+    
+    <div class="slds-m-around_x-small slds-scrollable_x">
+        <table class="slds-table slds-table_bordered">
+            <thead>
+                <tr class="slds-text-title_caps">
+                    <aura:if isTrue="{!v.currentUserId == v.ssOwnerUserId}">
+                        <th scope="col">
+                            <div class="slds-truncate" title="Action">Action</div>
+                        </th>
+                    </aura:if>
+                    <th scope="col">
+                        <div class="slds-truncate" title="Team Member">Team Member</div>
+                    </th>
+                    <th scope="col">
+                        <div class="slds-truncate" title="Role">Role</div>
+                    </th>
+                    <th scope="col">
+                        <div class="slds-truncate" title="Account">Account</div>
+                    </th>
+                    <!--th scope="col">
+                        <div class="slds-truncate" title="Contact">Contact</div>
+                    </th-->
+                    <th scope="col">
+                        <div class="slds-truncate" title="Opportunity">Opportunity</div>
+                    </th>
+                    <th scope="col">
+                        <div class="slds-truncate" title="Case">Case</div>
+                    </th>
+                </tr>
+            </thead>
+            <aura:if isTrue="{!!empty(v.accountTeamMemberList)}">
+                <tbody>
+                    <aura:iteration items="{!v.accountTeamMemberList}" var="accTM" indexVar="index">    
+                        <tr>
+                            <aura:if isTrue="{!v.currentUserId == v.ssOwnerUserId}">
+                                <td data-label="Action">
+                                    <lightning:buttonIcon iconName="utility:delete" onclick="{!c.handleDelete}" value="{!accTM.Id}" variant="bare" alternativeText="Delete" iconClass="dark"/>
+                                    <lightning:buttonIcon iconName="utility:edit" onclick="{!c.handleEdit}" value="{!accTM.Id}" variant="bare" alternativeText="Edit" iconClass="dark"/>
+                                </td>
+                            </aura:if>
+                            <th scope="row" data-label="User">
+                                <div class="slds-truncate" title="{!accTM.User.Name}"><a href="javascript:void(0);">{!accTM.User.Name}</a></div>
+                            </th>
+                            <td data-label="Role">
+                                <div class="slds-truncate" title="{!accTM.TeamMemberRole}">{!accTM.TeamMemberRole}</div>
+                            </td>
+                            <td data-label="Account Access">
+                                <aura:if  isTrue="{!accTM.AccountAccessLevel == 'Read'}">
+                                    <div class="slds-truncate" title="Read Only">Read Only</div>
+                                </aura:if>
+                                <aura:if  isTrue="{!accTM.AccountAccessLevel == 'Edit'}">
+                                    <div class="slds-truncate" title="Read/Write">Read/Write</div>
+                                </aura:if>
+                            </td>
+                            <!--td data-label="Contact Access">
+                                <aura:if  isTrue="{!accTM.ContactAccessLevel == 'Read'}">
+                                    <div class="slds-truncate" title="Read Only">Read Only</div>
+                                </aura:if>
+                                <aura:if  isTrue="{!accTM.ContactAccessLevel == 'Edit'}">
+                                    <div class="slds-truncate" title="Read/Write">Read/Write</div>
+                                </aura:if>
+                                <aura:if  isTrue="{!accTM.ContactAccessLevel == 'None'}">
+                                    <div class="slds-truncate" title="Read/Write">Private</div>
+                                </aura:if>
+                            </td-->
+                            <td data-label="Opportunity Access">
+                                <aura:if  isTrue="{!accTM.OpportunityAccessLevel == 'Read'}">
+                                    <div class="slds-truncate" title="Read Only">Read Only</div>
+                                </aura:if>
+                                <aura:if  isTrue="{!accTM.OpportunityAccessLevel == 'Edit'}">
+                                    <div class="slds-truncate" title="Read/Write">Read/Write</div>
+                                </aura:if>
+                                <aura:if  isTrue="{!accTM.OpportunityAccessLevel == 'None'}">
+                                    <div class="slds-truncate" title="Read/Write">Private</div>
+                                </aura:if>
+                            </td>
+                            <td data-label="Case Access">
+                                <aura:if  isTrue="{!accTM.CaseAccessLevel == 'Read'}">
+                                    <div class="slds-truncate" title="Read Only">Read Only</div>
+                                </aura:if>
+                                <aura:if  isTrue="{!accTM.CaseAccessLevel == 'Edit'}">
+                                    <div class="slds-truncate" title="Read/Write">Read/Write</div>
+                                </aura:if>
+                                <aura:if  isTrue="{!accTM.CaseAccessLevel == 'None'}">
+                                    <div class="slds-truncate" title="Read/Write">Private</div>
+                                </aura:if>
+                            </td>
+                        </tr>
+                    </aura:iteration>
+                </tbody>
+                <aura:set attribute="else"> 
+                    <div class="slds-align_absolute-center">
+                        No records found..
+                    </div>
+                </aura:set>
+            </aura:if>
+        </table>
+    </div>
+    <!--Component End-->
+</aura:component>

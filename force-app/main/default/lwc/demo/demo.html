@@ -1,0 +1,24 @@
+<template>
+    <lightning-card title="ORDER SUMMARY" class="order-summary">
+       <!-- <lightning-combobox
+            name="progress" label="Order Type" value={value}
+            placeholder="Select Order" options={options}
+            onchange={handleOrderType}></lightning-combobox>-->
+<hr>
+        <lightning-input type="text" value={poValue} class="po-number" onchange={handleChange} label="PO Number"></lightning-input>
+        <!-- <c-lb2b-order-review item={var1}> </c-lb2b-order-review> -->
+        <lightning-combobox
+            name="progress" label="Shipping Condition" value={value1} class="select-shipping" 
+            placeholder="Select Shipping" options={options1}
+            onchange={handleShipping}></lightning-combobox>
+
+        <lightning-input class="requested-delivery-date" type="date" label="Requested Delivery Date" min={todaysDate}></lightning-input>
+        <template if:true={ShowBtn}>
+            <a  onclick={navigateToNext}  >
+                <button class="cart-checkout">Checkout</button>
+            </a>  
+            </template>
+             
+    </lightning-card>
+    
+</template>
